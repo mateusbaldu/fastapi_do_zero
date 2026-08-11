@@ -73,9 +73,7 @@ def fetch_user(user_id: int):
     return database[user_id - 1]
 
 
-@app.delete(
-    "/users/{user_id}", status_code=204
-)
+@app.delete("/users/{user_id}", status_code=204)
 def delete_user(user_id: int):
     if user_id < 1 or user_id > len(database):
         raise HTTPException(

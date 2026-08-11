@@ -82,7 +82,7 @@ def test_update_user(client):
     assert response.json() == {
         "username": "Bob",
         "email": "bob@email.com",
-        "id": 1
+        "id": 1,
     }
 
 
@@ -93,13 +93,11 @@ def test_update_user_return_not_found(client):
             "username": "Bob",
             "email": "bob@email.com",
             "password": "secreto",
-        }
+        },
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        "detail": "User with id 2 does not exist"
-    }
+    assert response.json() == {"detail": "User with id 2 does not exist"}
 
 
 def delete_user(client):
@@ -110,14 +108,10 @@ def delete_user(client):
 
 
 def test_delete_user_return_not_found(client):
-    response = client.delete(
-        "/users/2"
-    )
+    response = client.delete("/users/2")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        "detail": "User with id 2 does not exist"
-    }
+    assert response.json() == {"detail": "User with id 2 does not exist"}
 
 
 def test_fetch_user(client):
@@ -127,7 +121,7 @@ def test_fetch_user(client):
     assert response.json() == {
         "username": "Bob",
         "email": "bob@email.com",
-        "id": 1
+        "id": 1,
     }
 
 
@@ -135,6 +129,4 @@ def test_fetch_user_return_not_found(client):
     response = client.get("/users/2")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {
-        "detail": "User with id 2 does not exist"
-    }
+    assert response.json() == {"detail": "User with id 2 does not exist"}
