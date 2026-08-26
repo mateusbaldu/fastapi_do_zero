@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from fastapi_do_zero.schema import UserResponseSchema
+
 
 def test_root_deve_retornar_ola_mundo(client):
     """
@@ -35,7 +37,6 @@ def test_ola_mundo_deve_retornar_ola_mundo(client):
 
 
 def test_create_user(client):
-
     response = client.post(
         "/users",
         json={
@@ -53,22 +54,38 @@ def test_create_user(client):
     }
 
 
-def fetch_all_users(client):
-    response = client.get("/users")
+def test_create_user_return_conflict(client, mock_user):
+    response = client.post(
+        "/users",
+        json={
+            "username": "Test",
+            "email": "test@test.com",
+            "password": "test123",
+        },
+    )
 
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.CONFLICT
     assert response.json() == {
-        "users": [
-            {
-                "id": 1,
-                "username": "Alice",
-                "email": "alice@email.com",
-            }
-        ]
+        "detail": "User Test or email test@test.com already taken"
     }
 
 
-def test_update_user(client):
+def test_fetch_all_users(client, mock_user):
+    user_schema = UserResponseSchema.model_validate(mock_user).model_dump()
+    response = client.get("/users")
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {"users": [user_schema]}
+
+
+def test_fetch_all_users_empty(client):
+    response = client.get("/users")
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {"users": []}
+
+
+def test_update_user(client, mock_user):
     response = client.put(
         "/users/1",
         json={
@@ -100,11 +117,10 @@ def test_update_user_return_not_found(client):
     assert response.json() == {"detail": "User with id 2 does not exist"}
 
 
-def delete_user(client):
+def test_delete_user(client, mock_user):
     response = client.delete("/users/1")
 
     assert response.status_code == HTTPStatus.NO_CONTENT
-    assert response.json() == {}
 
 
 def test_delete_user_return_not_found(client):
@@ -114,13 +130,13 @@ def test_delete_user_return_not_found(client):
     assert response.json() == {"detail": "User with id 2 does not exist"}
 
 
-def test_fetch_user(client):
+def test_fetch_user(client, mock_user):
     response = client.get("/users/1")
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        "username": "Bob",
-        "email": "bob@email.com",
+        "username": "Test",
+        "email": "test@test.com",
         "id": 1,
     }
 
@@ -130,3 +146,30 @@ def test_fetch_user_return_not_found(client):
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {"detail": "User with id 2 does not exist"}
+
+
+def test_update_integrity_error(client, mock_user):
+    # Inserindo fausto
+    client.post(
+        "/users",
+        json={
+            "username": "fausto",
+            "email": "fausto@example.com",
+            "password": "secret",
+        },
+    )
+
+    # Alterando o user das fixture para fausto
+    response_update = client.put(
+        f"/users/{mock_user.id}",
+        json={
+            "username": "fausto",
+            "email": "test@test.com",
+            "password": "mynewpassword",
+        },
+    )
+
+    assert response_update.status_code == HTTPStatus.CONFLICT
+    assert response_update.json() == {
+        "detail": "User fausto or email test@test.com already taken"
+    }
