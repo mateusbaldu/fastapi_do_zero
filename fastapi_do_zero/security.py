@@ -9,7 +9,7 @@ from fastapi.security import (
 from jwt import DecodeError, decode, encode
 from pwdlib import PasswordHash
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_do_zero.database import start_database
 from fastapi_do_zero.models import User
@@ -44,8 +44,8 @@ def generate_token(data: dict):
     return encoded_jwt
 
 
-def get_current_user(
-    session: Session = Depends(start_database),
+async def get_current_user(
+    session: AsyncSession = Depends(start_database),
     token: str = Depends(oauth2_scheme),
 ):
     credentials_exception = HTTPException(
@@ -65,7 +65,8 @@ def get_current_user(
     except DecodeError:
         raise credentials_exception
 
-    db_user = session.scalar(select(User).where(User.email == subject_email))
+    db_user = await session.scalar(
+        select(User).where(User.email == subject_email))
 
     if not db_user:
         raise credentials_exception
