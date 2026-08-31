@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from fastapi_do_zero.app import app
 from fastapi_do_zero.database import start_database
 from fastapi_do_zero.models import User, table_registry
+from fastapi_do_zero.security import get_pwd_hash
+from fastapi_do_zero.settings import Settings
 
 
 @pytest.fixture
@@ -41,10 +43,15 @@ def session():
 
 @pytest.fixture
 def mock_user(session):
-    user = User(username="Test", email="test@test.com", password="test123")
+    pwd = "test123"
+    user = User(
+        username="Test", email="test@test.com", password=get_pwd_hash(pwd)
+    )
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    user.clean_pwd = pwd
 
     return user
 
@@ -67,3 +74,18 @@ def _mock_db_time(model, time=datetime(2025, 5, 20)):
 @pytest.fixture
 def mock_db_time():
     return _mock_db_time
+
+
+@pytest.fixture
+def token(client, mock_user):
+    response = client.post(
+        "/auth/token",
+        data={"username": mock_user.email, "password": mock_user.clean_pwd},
+    )
+
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def settings():
+    return Settings()
