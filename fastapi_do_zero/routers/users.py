@@ -83,6 +83,7 @@ async def update_user(
 
         return current_user
     except IntegrityError:
+        await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
             detail=f"User {user.username} or email {user.email} already taken",
@@ -104,9 +105,7 @@ async def fetch_user(user_id: int, session: Session):
 
 @router.delete("/{user_id}", status_code=204)
 async def delete_user(
-        user_id: int,
-        session: Session,
-        current_user: CurrentUser
+    user_id: int, session: Session, current_user: CurrentUser
 ):
     if current_user.id != user_id:
         raise HTTPException(

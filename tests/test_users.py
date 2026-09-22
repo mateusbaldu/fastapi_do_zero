@@ -25,15 +25,16 @@ def test_create_user_return_conflict(client, mock_user):
     response = client.post(
         "/users",
         json={
-            "username": "Test",
-            "email": "test@test.com",
-            "password": "test123",
+            "username": mock_user.username,
+            "email": mock_user.email,
+            "password": mock_user.password,
         },
     )
 
     assert response.status_code == HTTPStatus.CONFLICT
     assert response.json() == {
-        "detail": "User Test or email test@test.com already taken"
+        "detail": f"User {mock_user.username} or email "
+        f"{mock_user.email} already taken"
     }
 
 
@@ -66,9 +67,11 @@ def test_update_user(client, mock_user, token):
     }
 
 
-def test_update_user_return_forbidden(client, token):
+def test_update_user_return_forbidden(
+    client, mock_user, mock_other_user, token
+):
     response = client.put(
-        "/users/2",
+        f"/users/{mock_other_user.id}",
         json={
             "username": "Bob",
             "email": "bob@email.com",
@@ -83,31 +86,24 @@ def test_update_user_return_forbidden(client, token):
     }
 
 
-def test_update_integrity_error(client, mock_user, token):
-    # Inserindo fausto
-    client.post(
-        "/users",
-        json={
-            "username": "fausto",
-            "email": "fausto@example.com",
-            "password": "secret",
-        },
-    )
+def test_update_integrity_error(client, mock_user, mock_other_user, token):
+    other_username = mock_other_user.username
+    other_email = mock_other_user.email
 
-    # Alterando o user das fixture para fausto
-    response_update = client.put(
+    response = client.put(
         f"/users/{mock_user.id}",
         json={
-            "username": "fausto",
-            "email": "test@test.com",
-            "password": "mynewpassword",
+            "username": other_username,
+            "email": other_email,
+            "password": mock_other_user.clean_pwd,
         },
         headers={"Authorization": f"Bearer {token}"},
     )
 
-    assert response_update.status_code == HTTPStatus.CONFLICT
-    assert response_update.json() == {
-        "detail": "User fausto or email test@test.com already taken"
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {
+        "detail": f"User {other_username} "
+                  f"or email {other_email} already taken"
     }
 
 
@@ -137,9 +133,9 @@ def test_fetch_user(client, mock_user):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        "username": "Test",
-        "email": "test@test.com",
-        "id": 1,
+        "username": mock_user.username,
+        "email": mock_user.email,
+        "id": mock_user.id,
     }
 
 

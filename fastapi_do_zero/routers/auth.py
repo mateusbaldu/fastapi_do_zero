@@ -13,12 +13,14 @@ from fastapi_do_zero.schema import (
 )
 from fastapi_do_zero.security import (
     generate_token,
+    get_current_user,
     verify_pwd_hash,
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 Session = Annotated[AsyncSession, Depends(start_database)]
 FormData = Annotated[OAuth2PasswordRequestForm, Depends()]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post("/token", response_model=Token)
@@ -41,3 +43,10 @@ async def login(session: Session, form_data: FormData):
 
     access_token = generate_token({"sub": db_user.email})
     return {"access_token": access_token, "token_type": "Bearer"}
+
+
+@router.post("/refresh_token", response_model=Token)
+async def refresh_access_token(user: CurrentUser):
+    new_access_token = generate_token(data={"sub": user.email})
+
+    return {"access_token": new_access_token, "token_type": "bearer"}
