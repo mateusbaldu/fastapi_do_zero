@@ -102,8 +102,7 @@ def test_update_integrity_error(client, mock_user, mock_other_user, token):
 
     assert response.status_code == HTTPStatus.CONFLICT
     assert response.json() == {
-        "detail": f"User {other_username} "
-                  f"or email {other_email} already taken"
+        "detail": f"User {other_username} or email {other_email} already taken"
     }
 
 

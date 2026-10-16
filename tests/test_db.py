@@ -3,7 +3,7 @@ from dataclasses import asdict
 import pytest
 from sqlalchemy import select
 
-from fastapi_do_zero.models import User
+from fastapi_do_zero.models import User, Todo
 
 
 @pytest.mark.asyncio
@@ -24,4 +24,21 @@ async def test_create_user(session, mock_db_time):
         "password": "test123",
         "created_at": time,
         "updated_at": time,
+        "todos": [],
     }
+
+
+@pytest.mark.asyncio
+async def test_create_todo_error(session, mock_user: User):
+    todo = Todo(
+        title='Test Todo',
+        description='Test Desc',
+        state='test',
+        user_id=mock_user.id,
+    )
+
+    session.add(todo)
+    await session.commit()
+
+    with pytest.raises(LookupError):
+        await session.scalar(select(Todo))

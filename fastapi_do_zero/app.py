@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from starlette.responses import HTMLResponse
 
-from fastapi_do_zero.routers import auth, users
+from fastapi_do_zero.routers import auth, todos, users
 from fastapi_do_zero.schema import Message
 
 app = FastAPI()
 
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(todos.router)
 
 
 @app.get("/", status_code=200, response_model=Message)
